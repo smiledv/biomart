@@ -1,0 +1,47 @@
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("biomaRt")
+
+#########startBiomart######
+library(biomaRt)
+
+ensembl = useEnsembl(biomart="ensembl")
+x <- listDatasets(ensembl)
+your_region = read.table("C:\\Users\\faara\\Desktop\\DCMS/biomart.txt")
+
+
+ensembl54=useMart(biomart="ensembl", dataset="sscrofa_gene_ensembl")
+chr.region = as.matrix(your_region$V1)
+entrez.ids=vector() 
+entrez.count=vector()
+all.results=data.frame()
+for (cnt in 1:length(chr.region))
+{
+  print(cnt)
+  filterlist=list(chr.region[cnt],"protein_coding")
+  results=getBM(attributes = c("hgnc_symbol","ensembl_gene_id","entrezgene_id", "chromosome_name", "start_position", "ensembl_transcript_id","end_position"), 
+                
+                filters = c("chromosomal_region","biotype"), values = filterlist, mart = ensembl54)
+  all.results=rbind(all.results,results)
+  
+}
+
+#a<- listAttributes(ensembl)
+
+chr=as.data.frame(all.results$chromosome_name)
+start=as.data.frame(all.results$start_position)
+end=as.data.frame(all.results$end_position)
+geneid=as.data.frame(all.results$ensembl_gene_id)
+genename=as.data.frame(all.results$hgnc_symbol)
+tr=as.data.frame(all.results$ensembl_transcript_id)
+GENE1=cbind(chr,start)
+GENE2=cbind(GENE1,end)
+GENE3=cbind(GENE2,geneid)
+GENE4=cbind(GENE3,genename)
+GENE5=cbind(GENE4,tr)
+
+require(data.table)
+
+G=setDT(GENE5)
+write.csv(G, 'dcms_genes.csv')
